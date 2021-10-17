@@ -30,24 +30,13 @@ resource "aws_security_group" "airbyte_instance" {
   ingress = [
     {
       description      = "allow alb traffic"
-      from_port        = 443
-      to_port          = 443
+      from_port        = 8000
+      to_port          = 8000
       protocol         = "tcp"
       cidr_blocks      = []
       ipv6_cidr_blocks = []
       prefix_list_ids  = []
-      security_groups  = [aws_security_group.airbyte_tg.id]
-      self             = false
-    },
-    {
-      description      = "allow alb traffic"
-      from_port        = 80
-      to_port          = 80
-      protocol         = "tcp"
-      cidr_blocks      = []
-      ipv6_cidr_blocks = []
-      prefix_list_ids  = []
-      security_groups  = [aws_security_group.airbyte_tg.id]
+      security_groups  = [aws_security_group.airbyte_lb.id]
       self             = false
     }
   ]
@@ -78,9 +67,9 @@ resource "aws_instance" "this" {
   associate_public_ip_address = true
   vpc_security_group_ids      = [aws_security_group.airbyte_instance.id]
   user_data                   = data.template_file.airbyte.rendered
-  key_name = var.airbyte_key_pair_name
+  key_name                    = var.airbyte_key_pair_name
   tags = {
-      Name = "airbyte"
+    Name = "airbyte"
   }
 }
 
@@ -92,12 +81,12 @@ resource "aws_lb_target_group" "this" {
 }
 
 resource "aws_lb_target_group_attachment" "this" {
-    target_group_arn = aws_lb_target_group.this.arn
-    target_id = aws_instance.this.id
-    port = 8000
+  target_group_arn = aws_lb_target_group.this.arn
+  target_id        = aws_instance.this.id
+  port             = 8000
 }
 
-resource "aws_security_group" "airbyte_tg" {
+resource "aws_security_group" "airbyte_lb" {
   name        = "airbyte-tg-sg"
   description = "Sg for Airbyte ALB"
   vpc_id      = var.vpc_id
@@ -146,7 +135,7 @@ resource "aws_lb" "this" {
   name               = "test-lb-tf"
   internal           = false
   load_balancer_type = "application"
-  security_groups    = [aws_security_group.airbyte_tg.id]
+  security_groups    = [aws_security_group.airbyte_lb.id]
   subnets            = var.subnets
 }
 
