@@ -1,4 +1,14 @@
 terraform {
+  backend "remote" {
+    hostname     = "app.terraform.io"
+    organization = "seth-saperstein"
+    workspaces {
+      name = "dip-airbyte-poc"
+    }
+  }
+}
+
+terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
@@ -13,92 +23,122 @@ provider "aws" {
 }
 
 resource "aws_security_group" "airbyte_instance" {
-    name = "airbyte-sg"
-    description = "Sg for hosting Airbyte"
-    vpc_id = var.vpc_id
+  name        = "airbyte-sg"
+  description = "Sg for hosting Airbyte"
+  vpc_id      = var.vpc_id
 
-    ingress = [
-        {
-            description = "allow whitelisted IP's"
-            from_port = 443
-            to_port = 443
-            protocol = "tcp"
-            cidr_blcoks = var.whitelisted_ips
-        },
-        {
-            description = "allow whitelisted IP's"
-            from_port = 80
-            to_port = 80
-            protocol = "tcp"
-            cidr_blcoks = var.whitelisted_ips
-        }
-    ]
+  ingress = [
+    {
+      description      = "allow alb traffic"
+      from_port        = 443
+      to_port          = 443
+      protocol         = "tcp"
+      cidr_blocks      = []
+      ipv6_cidr_blocks = []
+      prefix_list_ids  = []
+      security_groups  = [aws_security_group.airbyte_tg.id]
+      self             = false
+    },
+    {
+      description      = "allow alb traffic"
+      from_port        = 80
+      to_port          = 80
+      protocol         = "tcp"
+      cidr_blocks      = []
+      ipv6_cidr_blocks = []
+      prefix_list_ids  = []
+      security_groups  = [aws_security_group.airbyte_tg.id]
+      self             = false
+    }
+  ]
 
-    egress = [
-        {
-            from_port        = 0
-            to_port          = 0
-            protocol         = "-1"
-            cidr_blocks      = ["0.0.0.0/0"]
-            ipv6_cidr_blocks = ["::/0"]
-        }
-    ]
+  egress = [
+    {
+      description      = "All traffic out"
+      from_port        = 0
+      to_port          = 0
+      protocol         = "-1"
+      cidr_blocks      = ["0.0.0.0/0"]
+      ipv6_cidr_blocks = ["::/0"]
+      prefix_list_ids  = []
+      security_groups  = []
+      self             = false
+    }
+  ]
+}
+
+data "template_file" "airbyte" {
+  template = file("scripts/startup.sh")
+  vars     = {}
 }
 
 resource "aws_instance" "this" {
-  ami           = "ami-02e136e904f3da870"
-  instance_type = "t2.medium"
+  ami                         = "ami-02e136e904f3da870"
+  instance_type               = "t2.medium"
   associate_public_ip_address = true
-  vpc_security_group_ids = [aws_security_group.airbyte_instance.id]
+  vpc_security_group_ids      = [aws_security_group.airbyte_instance.id]
+  user_data                   = data.template_file.airbyte.rendered
 }
 
 resource "aws_lb_target_group" "this" {
-    name = "airbyte-tg"
-    port = 8000
-    protocol = "HTTP"
-    vpc_id = var.vpc_id
+  name     = "airbyte-tg"
+  port     = 8000
+  protocol = "HTTP"
+  vpc_id   = var.vpc_id
 }
 
 
 resource "aws_security_group" "airbyte_tg" {
-    name = "airbyte-tg-sg"
-    description = "Sg for Airbyte ALB"
-    vpc_id = var.vpc_id
+  name        = "airbyte-tg-sg"
+  description = "Sg for Airbyte ALB"
+  vpc_id      = var.vpc_id
 
-    ingress = [
-        {
-            description = "allow whitelisted IP's"
-            from_port = 443
-            to_port = 443
-            protocol = "tcp"
-            cidr_blcoks = [aws_instance.this.public_ip]
-        },
-        {
-            description = "allow whitelisted IP's"
-            from_port = 80
-            to_port = 80
-            protocol = "tcp"
-            cidr_blcoks = [aws_instance.this.public_ip]
-        }
-    ]
+  ingress = [
+    {
+      description      = "allow whitelisted IPs"
+      from_port        = 443
+      to_port          = 443
+      protocol         = "tcp"
+      cidr_blocks      = var.whitelisted_ips
+      ipv6_cidr_blocks = []
+      prefix_list_ids  = []
+      security_groups  = []
+      self             = false
+    },
+    {
+      description      = "allow whitelisted IPs"
+      from_port        = 80
+      to_port          = 80
+      protocol         = "tcp"
+      cidr_blocks      = var.whitelisted_ips
+      ipv6_cidr_blocks = []
+      prefix_list_ids  = []
+      security_groups  = []
+      self             = false
+    }
+  ]
 
-    egress = [
-        {
-            from_port        = 0
-            to_port          = 0
-            protocol         = "-1"
-            cidr_blocks      = ["0.0.0.0/0"]
-            ipv6_cidr_blocks = ["::/0"]
-        }
-    ]
+  egress = [
+    {
+      description      = "All traffic out"
+      from_port        = 0
+      to_port          = 0
+      protocol         = "-1"
+      cidr_blocks      = ["0.0.0.0/0"]
+      ipv6_cidr_blocks = ["::/0"]
+      prefix_list_ids  = []
+      security_groups  = []
+      self             = false
+    }
+  ]
 }
 
-resource "aws_alb" "this" {
-    name               = "test-lb-tf"
-    internal           = false
-    load_balancer_type = "application"
-    security_groups    = [aws_security_group.airbyte_tg.id]
-    subnets            = var.subnets
+resource "aws_lb" "this" {
+  name               = "test-lb-tf"
+  internal           = false
+  load_balancer_type = "application"
+  security_groups    = [aws_security_group.airbyte_tg.id]
+  subnets            = var.subnets
 }
 
 resource "aws_lb_listener" "airbyte" {
