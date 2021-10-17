@@ -87,7 +87,7 @@ resource "aws_lb_target_group_attachment" "this" {
 }
 
 resource "aws_security_group" "airbyte_lb" {
-  name        = "airbyte-tg-sg"
+  name        = "airbyte-lb-sg"
   description = "Sg for Airbyte ALB"
   vpc_id      = var.vpc_id
 
@@ -129,6 +129,10 @@ resource "aws_security_group" "airbyte_lb" {
       self             = false
     }
   ]
+
+  lifecycle {
+      create_before_destroy = true
+  }
 }
 
 resource "aws_lb" "this" {
