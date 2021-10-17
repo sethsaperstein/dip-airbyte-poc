@@ -23,7 +23,7 @@ provider "aws" {
 }
 
 resource "aws_security_group" "airbyte_instance" {
-  name        = "airbyte-sg"
+  name        = "${var.project_name}-airbyte-sg-${var.stack_id}"
   description = "Sg for hosting Airbyte"
   vpc_id      = var.vpc_id
 
@@ -69,12 +69,12 @@ resource "aws_instance" "this" {
   user_data                   = data.template_file.airbyte.rendered
   key_name                    = var.airbyte_key_pair_name
   tags = {
-    Name = "airbyte"
+    Name = "${var.project_name}-airbyte-${var.stack_id}"
   }
 }
 
 resource "aws_lb_target_group" "this" {
-  name     = "airbyte-tg"
+  name     = "${var.project_name}-airbyte-tg-${var.stack_id}"
   port     = 8000
   protocol = "HTTP"
   vpc_id   = var.vpc_id
@@ -87,7 +87,7 @@ resource "aws_lb_target_group_attachment" "this" {
 }
 
 resource "aws_security_group" "airbyte_lb" {
-  name        = "airbyte-lb-sg"
+  name        = "${var.project_name}-airbyte-lb-sg-${var.stack_id}"
   description = "Sg for Airbyte ALB"
   vpc_id      = var.vpc_id
 
@@ -136,7 +136,7 @@ resource "aws_security_group" "airbyte_lb" {
 }
 
 resource "aws_lb" "this" {
-  name               = "test-lb-tf"
+  name               = "${var.project_name}-airbyte-${var.stack_id}"
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.airbyte_lb.id]
