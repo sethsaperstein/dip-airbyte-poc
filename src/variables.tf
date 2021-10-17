@@ -10,3 +10,8 @@ variable whitelisted_ips {
 variable subnets {
     type = list(string)
 }
+
+variable airbyte_key_pair_name {
+    type = string
+    default = "jumpbox"
+}

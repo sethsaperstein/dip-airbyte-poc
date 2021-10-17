@@ -78,6 +78,7 @@ resource "aws_instance" "this" {
   associate_public_ip_address = true
   vpc_security_group_ids      = [aws_security_group.airbyte_instance.id]
   user_data                   = data.template_file.airbyte.rendered
+  key_name = var.airbyte_key_pair_name
   tags = {
       Name = "airbyte"
   }
@@ -95,7 +96,6 @@ resource "aws_lb_target_group_attachment" "this" {
     target_id = aws_instance.this.id
     port = 8000
 }
-
 
 resource "aws_security_group" "airbyte_tg" {
   name        = "airbyte-tg-sg"
