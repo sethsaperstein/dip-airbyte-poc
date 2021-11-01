@@ -30,3 +30,7 @@ variable env_name {
     type = string
     default = "sandbox"
 }
+
+variable certificate_arn {
+    type = string
+}
