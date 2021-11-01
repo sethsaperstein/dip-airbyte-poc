@@ -12,3 +12,8 @@ docker-compose --version
 mkdir airbyte && cd airbyte
 wget https://raw.githubusercontent.com/airbytehq/airbyte/master/{.env,docker-compose.yaml}
 docker-compose up -d
+
+sudo yum install -y httpd
+sudo amazon-linux-extras install -y nginx1
+sudo htpasswd -bc /etc/nginx/.htpasswd dip password
+sudo service nginx start

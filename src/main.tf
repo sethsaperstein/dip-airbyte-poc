@@ -30,8 +30,8 @@ resource "aws_security_group" "airbyte_instance" {
   ingress = [
     {
       description      = "allow alb traffic"
-      from_port        = 80
-      to_port          = 80
+      from_port        = 443
+      to_port          = 443
       protocol         = "tcp"
       cidr_blocks      = []
       ipv6_cidr_blocks = []
@@ -75,7 +75,7 @@ resource "aws_instance" "this" {
 
 resource "aws_lb_target_group" "this" {
   name     = "${var.project_name}-airbyte-tg-${var.stack_id}"
-  port     = 80
+  port     = 443
   protocol = "HTTP"
   vpc_id   = var.vpc_id
 }
@@ -83,7 +83,7 @@ resource "aws_lb_target_group" "this" {
 resource "aws_lb_target_group_attachment" "this" {
   target_group_arn = aws_lb_target_group.this.arn
   target_id        = aws_instance.this.id
-  port             = 80
+  port             = 443
 }
 
 resource "aws_security_group" "airbyte_lb" {
@@ -103,17 +103,17 @@ resource "aws_security_group" "airbyte_lb" {
       security_groups  = []
       self             = false
     },
-    {
-      description      = "allow whitelisted IPs"
-      from_port        = 80
-      to_port          = 80
-      protocol         = "tcp"
-      cidr_blocks      = var.whitelisted_ips
-      ipv6_cidr_blocks = []
-      prefix_list_ids  = []
-      security_groups  = []
-      self             = false
-    }
+    # {
+    #   description      = "allow whitelisted IPs"
+    #   from_port        = 80
+    #   to_port          = 80
+    #   protocol         = "tcp"
+    #   cidr_blocks      = var.whitelisted_ips
+    #   ipv6_cidr_blocks = []
+    #   prefix_list_ids  = []
+    #   security_groups  = []
+    #   self             = false
+    # }
   ]
 
   egress = [
@@ -145,8 +145,8 @@ resource "aws_lb" "this" {
 
 resource "aws_lb_listener" "airbyte" {
   load_balancer_arn = aws_lb.this.arn
-  port              = "80"
-  protocol          = "HTTP"
+  port              = "443"
+  protocol          = "HTTPS"
 
   default_action {
     type             = "forward"
