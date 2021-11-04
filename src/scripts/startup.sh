@@ -16,4 +16,5 @@ docker-compose up -d
 sudo yum install -y httpd
 sudo amazon-linux-extras install -y nginx1
 sudo htpasswd -bc /etc/nginx/.htpasswd dip password
+sudo cp ../resources/nginx.conf /etc/nginx/nginx.conf
 sudo service nginx start
