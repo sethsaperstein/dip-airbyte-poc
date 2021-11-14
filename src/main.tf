@@ -86,10 +86,6 @@ resource "aws_lb_target_group" "this" {
   port     = 80
   protocol = "HTTP"
   vpc_id   = var.vpc_id
-
-  lifecycle {
-    create_before_destroy = true
-  }
 }
 
 resource "aws_lb_target_group_attachment" "this" {
