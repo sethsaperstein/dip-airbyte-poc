@@ -34,3 +34,11 @@ variable env_name {
 variable certificate_arn {
     type = string
 }
+
+variable nginx_username {
+    type = string
+}
+
+variable nginx_password {
+    type = string
+}

@@ -22,6 +22,12 @@ provider "aws" {
   region = "us-east-1"
 }
 
+data "aws_caller_identity" "current" {}
+
+locals {
+    account_id = data.aws_caller_identity.current.account_id
+}
+
 resource "aws_security_group" "airbyte_instance" {
   name        = "${var.project_name}-airbyte-sg-${var.stack_id}"
   description = "Sg for hosting Airbyte"
@@ -30,8 +36,8 @@ resource "aws_security_group" "airbyte_instance" {
   ingress = [
     {
       description      = "allow alb traffic"
-      from_port        = 443
-      to_port          = 443
+      from_port        = 80
+      to_port          = 80
       protocol         = "tcp"
       cidr_blocks      = []
       ipv6_cidr_blocks = []
@@ -56,9 +62,8 @@ resource "aws_security_group" "airbyte_instance" {
   ]
 }
 
-data "template_file" "airbyte" {
-  template = file("scripts/startup.sh")
-  vars     = {}
+locals {
+  conf_bucket_name = "${var.project_name}-airbyte-conf-${var.stack_id}-${local.account_id}"
 }
 
 resource "aws_instance" "this" {
@@ -66,7 +71,10 @@ resource "aws_instance" "this" {
   instance_type               = "t2.medium"
   associate_public_ip_address = true
   vpc_security_group_ids      = [aws_security_group.airbyte_instance.id]
-  user_data                   = data.template_file.airbyte.rendered
+  user_data                   = templatefile("scripts/startup.tpl", {
+    NGINX_USERNAME = var.nginx_username,
+    NGINX_PASSWORD = var.nginx_password,
+  })
   key_name                    = var.airbyte_key_pair_name
   tags = {
     Name = "${var.project_name}-airbyte-${var.stack_id}"
@@ -75,7 +83,7 @@ resource "aws_instance" "this" {
 
 resource "aws_lb_target_group" "this" {
   name     = "${var.project_name}-airbyte-tg-${var.stack_id}"
-  port     = 443
+  port     = 80
   protocol = "HTTP"
   vpc_id   = var.vpc_id
 }
@@ -83,7 +91,7 @@ resource "aws_lb_target_group" "this" {
 resource "aws_lb_target_group_attachment" "this" {
   target_group_arn = aws_lb_target_group.this.arn
   target_id        = aws_instance.this.id
-  port             = 443
+  port             = 80
 }
 
 resource "aws_security_group" "airbyte_lb" {
@@ -102,18 +110,7 @@ resource "aws_security_group" "airbyte_lb" {
       prefix_list_ids  = []
       security_groups  = []
       self             = false
-    },
-    # {
-    #   description      = "allow whitelisted IPs"
-    #   from_port        = 80
-    #   to_port          = 80
-    #   protocol         = "tcp"
-    #   cidr_blocks      = var.whitelisted_ips
-    #   ipv6_cidr_blocks = []
-    #   prefix_list_ids  = []
-    #   security_groups  = []
-    #   self             = false
-    # }
+    }
   ]
 
   egress = [

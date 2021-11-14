@@ -13,8 +13,15 @@ mkdir airbyte && cd airbyte
 wget https://raw.githubusercontent.com/airbytehq/airbyte/master/{.env,docker-compose.yaml}
 docker-compose up -d
 
-sudo yum install -y httpd
-sudo amazon-linux-extras install -y nginx1
-sudo htpasswd -bc /etc/nginx/.htpasswd dip password
-sudo cp ../resources/nginx.conf /etc/nginx/nginx.conf
-sudo service nginx start
+docker run \
+    --rm \
+    -d \
+    --name nginx-basic-auth-proxy \
+    --network airbyte_default \
+    -p 80:8080 \
+    -p 8090:8090 \
+    -e PROXY_PASS=http://webapp:80/ \
+    -e BASIC_AUTH_USERNAME=${NGINX_USERNAME} \
+    -e BASIC_AUTH_PASSWORD=${NGINX_PASSWORD} \
+    -e PORT=8080 \
+    quay.io/dtan4/nginx-basic-auth-proxy
