@@ -37,8 +37,8 @@ data "terraform_remote_state" "vpc" {
 
 locals {
     account_id = data.aws_caller_identity.current.account_id
-    public_subnet_id = data.terraform_remote_state.vpc.outputs.public_subnet.id
-    private_subnet_id = data.terraform_remote_state.vpc.outputs.private_subnet.id
+    public_subnet_id = data.terraform_remote_state.vpc.outputs.public_subnet_1.id
+    private_subnet_id = data.terraform_remote_state.vpc.outputs.private_subnet_1.id
     vpc_id = data.terraform_remote_state.vpc.outputs.vpc.id
 }
 
