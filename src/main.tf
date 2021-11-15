@@ -24,14 +24,28 @@ provider "aws" {
 
 data "aws_caller_identity" "current" {}
 
+data "terraform_remote_state" "vpc" {
+  backend = "remote"
+
+  config = {
+    organization = "seth-saperstein"
+    workspaces = {
+      name = "poc-network-tf"
+    }
+  }
+}
+
 locals {
     account_id = data.aws_caller_identity.current.account_id
+    public_subnet_id = data.terraform_remote_state.vpc.outputs.public_subnet.id
+    private_subnet_id = data.terraform_remote_state.vpc.outputs.private_subnet.id
+    vpc_id = data.terraform_remote_state.vpc.outputs.vpc.id
 }
 
 resource "aws_security_group" "airbyte_instance" {
   name        = "${var.project_name}-airbyte-sg-${var.stack_id}"
   description = "Sg for hosting Airbyte"
-  vpc_id      = var.vpc_id
+  vpc_id      = local.vpc_id
 
   ingress = [
     {
@@ -62,15 +76,23 @@ resource "aws_security_group" "airbyte_instance" {
   ]
 }
 
-locals {
-  conf_bucket_name = "${var.project_name}-airbyte-conf-${var.stack_id}-${local.account_id}"
+resource "aws_network_interface" "airbyte" {
+  subnet_id   = local.private_subnet_id
+
+  tags = {
+    Name = "${var.project_name}-airbyte-eni-${var.stack_id}"
+  }
 }
 
 resource "aws_instance" "this" {
   ami                         = "ami-02e136e904f3da870"
   instance_type               = "t2.medium"
-  associate_public_ip_address = true
-  vpc_security_group_ids      = [aws_security_group.airbyte_instance.id]
+  
+  network_interface {
+    network_interface_id = aws_network_interface.airbyte.id
+    device_index = 0
+  }
+
   user_data                   = templatefile("scripts/startup.tpl", {
     NGINX_USERNAME = var.nginx_username,
     NGINX_PASSWORD = var.nginx_password,
@@ -85,7 +107,7 @@ resource "aws_lb_target_group" "this" {
   name     = "${var.project_name}-airbyte-tg-${var.stack_id}"
   port     = 80
   protocol = "HTTP"
-  vpc_id   = var.vpc_id
+  vpc_id   = local.vpc_id
 }
 
 resource "aws_lb_target_group_attachment" "this" {
@@ -97,7 +119,7 @@ resource "aws_lb_target_group_attachment" "this" {
 resource "aws_security_group" "airbyte_lb" {
   name        = "${var.project_name}-airbyte-lb-sg-${var.stack_id}"
   description = "Sg for Airbyte ALB"
-  vpc_id      = var.vpc_id
+  vpc_id      = local.vpc_id
 
   ingress = [
     {
@@ -137,7 +159,7 @@ resource "aws_lb" "this" {
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.airbyte_lb.id]
-  subnets            = var.subnets
+  subnets            = [local.public_subnet_id]
 }
 
 resource "aws_lb_listener" "airbyte" {
