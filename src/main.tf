@@ -84,6 +84,7 @@ resource "aws_security_group" "airbyte_instance" {
 
 resource "aws_network_interface" "airbyte" {
   subnet_id = local.private_subnet_id_1
+  security_groups = [aws_security_group.airbyte_instance.id]
 
   tags = {
     Name = "${var.project_name}-airbyte-eni-${var.stack_id}"
