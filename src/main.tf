@@ -41,10 +41,11 @@ data "aws_acm_certificate" "issued" {
 }
 
 locals {
-  account_id        = data.aws_caller_identity.current.account_id
-  public_subnet_id  = data.terraform_remote_state.vpc.outputs.public_subnet_1.id
-  private_subnet_id = data.terraform_remote_state.vpc.outputs.private_subnet_1.id
-  vpc_id            = data.terraform_remote_state.vpc.outputs.vpc.id
+  account_id          = data.aws_caller_identity.current.account_id
+  public_subnet_id_1  = data.terraform_remote_state.vpc.outputs.public_subnet_1.id
+  private_subnet_id_1 = data.terraform_remote_state.vpc.outputs.private_subnet_1.id
+  public_subnet_id_2  = data.terraform_remote_state.vpc.outputs.public_subnet_2.id
+  vpc_id              = data.terraform_remote_state.vpc.outputs.vpc.id
 }
 
 resource "aws_security_group" "airbyte_instance" {
@@ -82,7 +83,7 @@ resource "aws_security_group" "airbyte_instance" {
 }
 
 resource "aws_network_interface" "airbyte" {
-  subnet_id = local.private_subnet_id
+  subnet_id = local.private_subnet_id_1
 
   tags = {
     Name = "${var.project_name}-airbyte-eni-${var.stack_id}"
@@ -164,7 +165,7 @@ resource "aws_lb" "this" {
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.airbyte_lb.id]
-  subnets            = [local.public_subnet_id]
+  subnets            = [local.public_subnet_id_1, local.public_subnet_id_2]
 }
 
 resource "aws_lb_listener" "airbyte" {
