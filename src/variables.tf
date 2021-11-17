@@ -19,10 +19,11 @@ variable nginx_password {
   description = "password for basic http auth"
 }
 
-# variable airbyte_key_pair_name {
-#   type    = string
-#   default = "jumpbox"
-# }
+# TODO: remove this
+variable airbyte_key_pair_name {
+  type    = string
+  default = "jumpbox"
+}
 
 variable project_name {
   type        = string

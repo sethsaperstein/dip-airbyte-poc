@@ -10,7 +10,8 @@ sudo chmod +x /usr/local/bin/docker-compose
 docker-compose --version
 
 mkdir airbyte && cd airbyte
-wget https://raw.githubusercontent.com/airbytehq/airbyte/master/{.env,docker-compose.yaml}
+aws s3 cp s3://${CONF_BUCKET_NAME}/docker-compose.yaml ./docker-compose.yaml
+wget https://raw.githubusercontent.com/airbytehq/airbyte/master/.env
 docker-compose up -d
 
 docker run \
