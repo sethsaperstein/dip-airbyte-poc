@@ -156,6 +156,7 @@ resource "aws_iam_instance_profile" "airbyte" {
 resource "aws_instance" "this" {
   ami           = "ami-02e136e904f3da870"
   instance_type = "t2.medium"
+  iam_instance_profile = aws_iam_instance_profile.airbyte.id
 
   network_interface {
     network_interface_id = aws_network_interface.airbyte.id
