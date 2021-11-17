@@ -27,7 +27,7 @@ variable nginx_password {
 variable project_name {
   type        = string
   default     = "dip"
-  descriptoin = "arbitrary prefix for resources"
+  description = "arbitrary prefix for resources"
 }
 
 variable stack_id {
