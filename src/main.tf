@@ -104,7 +104,7 @@ resource "aws_instance" "this" {
     NGINX_USERNAME = var.nginx_username,
     NGINX_PASSWORD = var.nginx_password,
   })
-  key_name = var.airbyte_key_pair_name
+  # key_name = var.airbyte_key_pair_name
   tags = {
     Name = "${var.project_name}-airbyte-${var.stack_id}"
   }
