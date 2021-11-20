@@ -125,7 +125,7 @@ resource "aws_iam_role" "instance" {
         {
           Action   = ["cloudwatch:CloudWatchLogsFullAccess"]
           Effect   = "Allow"
-          Resource = [aws_cloudwatch_log_group.airbyte.arn]
+          Resource = ["${aws_cloudwatch_log_group.airbyte.arn}*"]
         }
       ]
     })
