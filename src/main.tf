@@ -123,7 +123,7 @@ resource "aws_iam_role" "instance" {
           Resource = ["${aws_s3_bucket.config.arn}/*"]
         },
         {
-          Action   = ["cloudwatch:*"]
+          Action   = ["logs:*"]
           Effect   = "Allow"
           Resource = ["${aws_cloudwatch_log_group.airbyte.arn}*"]
         }
