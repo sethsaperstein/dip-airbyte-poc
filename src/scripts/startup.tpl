@@ -11,7 +11,7 @@ docker-compose --version
 
 mkdir airbyte && cd airbyte
 aws s3 cp s3://${CONF_BUCKET_NAME}/docker-compose.yaml ./docker-compose.yaml
-wget https://raw.githubusercontent.com/airbytehq/airbyte/master/.env
+wget https://raw.githubusercontent.com/airbytehq/airbyte/v0.35.0-alpha/.env
 docker-compose up -d
 
 docker run \
